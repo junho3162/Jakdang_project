@@ -1,0 +1,73 @@
+package com.jakdang.domain;
+
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * 모집 공고(팀) 정보를 담는 Entity 클래스입니다.
+ * 데이터베이스의 'teams' 테이블과 직접 매핑됩니다.
+ */
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "teams")
+public class Team {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "team_id", updatable = false)
+    private Long id;
+
+    @Column(name = "title", nullable = false)
+    private String title; // 공고 제목
+
+    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
+    private String content; // 공고 내용
+
+    @Column(name = "category", nullable = false)
+    private String category; // 카테고리 (공모전, 스터디 등)
+
+    @Column(name = "status", nullable = false)
+    private String status; // 모집 상태 (모집중, 모집완료)
+
+    @Column(name = "max_members", nullable = false)
+    private int maxMembers; // 최대 모집 인원
+
+    // User와의 다대일(N:1) 관계 설정
+    // 여러 개의 팀(Team)은 한 명의 사용자(User)에 의해 생성될 수 있습니다.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "leader_id") // 외래키(FK) 컬럼 이름을 'leader_id'로 지정
+    private User leader; // 팀장 정보
+
+    // (향후 확장용) 팀 멤버 목록 - 지금은 사용하지 않지만 미리 구조를 잡아둡니다.
+    // @ManyToMany
+    // private List<User> members = new ArrayList<>();
+
+    @Builder
+    public Team(String title, String content, String category, String status, int maxMembers, User leader) {
+        this.title = title;
+        this.content = content;
+        this.category = category;
+        this.status = status;
+        this.maxMembers = maxMembers;
+        this.leader = leader;
+    }
+
+    /**
+     * DTO의 데이터를 기반으로 자신의 필드를 직접 수정하는 메소드입니다.
+     * - 서비스 계층의 코드를 더 깔끔하게 유지할 수 있습니다.
+     * - 이 메소드는 @Transactional 환경에서 호출되면 변경된 내용이 자동으로 데이터베이스에 반영됩니다.
+     */
+    public void update(String title, String content, String category, String status, int maxMembers) {
+        this.title = title;
+        this.content = content;
+        this.category = category;
+        this.status = status;
+        this.maxMembers = maxMembers;
+    }
+}

@@ -18,7 +18,8 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    runtimeOnly 'com.mysql:mysql-connector-j'
+    // runtimeOnly 'com.mysql:mysql-connector-j' // 이 줄을 Mysql용으로 주석 처리합니다.
+    runtimeOnly 'org.postgresql:postgresql'      // 이 줄을 PostgreSQL용으로 추가합니다.
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
     // --- 이메일 발송 라이브러리를 추가해주세요 ---

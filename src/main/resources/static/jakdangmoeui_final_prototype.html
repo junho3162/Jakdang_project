@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>작당모의 - 한서대학교 팀프로젝트 성공 플랫폼</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f0f2f5; }
+        .page { display: none; animation: fadeIn 0.5s; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .main-content { width: 100%; max-width: 1280px; margin: 0 auto; }
+        .modal-content { animation: slideUp 0.3s; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body class="text-gray-800">
+
+<!-- 전체 레이아웃 컨테이너 -->
+<div id="app-container" class="min-h-screen">
+
+    <!-- 네비게이션 바 (로그인 후 표시) -->
+    <header id="navbar" class="bg-white shadow-md sticky top-0 z-50 hidden">
+        <nav class="main-content h-16 flex items-center justify-between px-6">
+            <div class="flex items-center space-x-8">
+                <a href="#" onclick="loadCommunityPage()" class="text-2xl font-bold text-blue-600">작당모의</a>
+                <a href="#" onclick="loadCommunityPage()" class="text-gray-600 hover:text-blue-600 font-semibold">모집 공고</a>
+                <a href="#" onclick="showPage('page-create-team')" class="text-gray-600 hover:text-blue-600 font-semibold">팀 만들기</a>
+                <a href="#" onclick="alert('강의실 예약 기능은 구현 예정입니다.')" class="text-gray-600 hover:text-blue-600 font-semibold">강의실 예약</a>
+            </div>
+            <div class="flex items-center space-x-6">
+                <a href="#" onclick="loadMyPage()" class="text-gray-600 hover:text-blue-600 font-semibold">마이페이지</a>
+                <a href="#" onclick="logout()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300">로그아웃</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="pt-8 pb-16">
+        <!-- 시작 페이지 -->
+        <div id="page-start" class="page active">
+            <!-- 시작 페이지 HTML -->
+        </div>
+
+        <!-- 로그인 페이지 -->
+        <div id="page-login" class="page">
+            <!-- 로그인 HTML -->
+        </div>
+
+        <!-- 회원가입 페이지 -->
+        <div id="page-signup" class="page">
+            <!-- 회원가입 HTML -->
+        </div>
+
+        <!-- 비밀번호 찾기 페이지 -->
+        <div id="page-forgot-password" class="page">
+            <!-- 비밀번호 찾기 HTML -->
+        </div>
+
+        <!-- 모집 공고 목록 페이지 -->
+        <div id="page-community" class="page">
+            <div class="main-content px-6">
+                <h1 class="text-3xl font-bold mb-6">모집 공고</h1>
+                <div id="team-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <p>모집 공고를 불러오는 중입니다...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 팀 만들기 페이지 -->
+        <div id="page-create-team" class="page">
+            <!-- 팀 만들기 HTML -->
+        </div>
+
+        <!-- 팀 상세 정보 페이지 -->
+        <div id="page-team-detail" class="page">
+            <!-- API로부터 받은 팀 상세 정보가 여기에 동적으로 삽입됩니다. -->
+        </div>
+
+        <!-- 마이페이지 -->
+        <div id="page-mypage" class="page">
+            <!-- API로부터 받은 내 정보가 여기에 동적으로 삽입됩니다. -->
+        </div>
+    </main>
+
+    <!-- 팀 지원하기 Modal -->
+    <div id="apply-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <!-- 지원하기 Modal HTML -->
+    </div>
+
+</div>
+
+<script>
+    const API_BASE_URL = ' '; // 로컬 개발용 API 주소
+
+    // --- 유틸리티 및 페이지 관리 ---
+    const pages = document.querySelectorAll('.page');
+    const navbar = document.getElementById('navbar');
+    let myInfo = null; // 로그인한 사용자 정보를 저장할 변수
+
+    function showPage(pageId) {
+        pages.forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        window.scrollTo(0, 0);
+    }
+
+    // --- JWT 토큰 관리 ---
+    function saveToken(token) { localStorage.setItem('accessToken', token); }
+    function getToken() { return localStorage.getItem('accessToken'); }
+    function removeToken() { localStorage.removeItem('accessToken'); }
+
+    async function apiFetch(endpoint, options = {}) {
+        const token = getToken();
+        const headers = { 'Content-Type': 'application/json', ...options.headers };
+        if (token) { headers['Authorization'] = `Bearer ${token}`; }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+            if (response.status === 401 || response.status === 403) {
+                alert('인증 정보가 유효하지 않습니다. 다시 로그인해주세요.');
+                logout();
+                throw new Error('Unauthorized');
+            }
+            return response;
+        } catch (error) {
+            if (error.message !== 'Unauthorized') {
+                console.error('API Fetch Error:', error);
+                alert('네트워크 오류. 백엔드 서버가 실행 중인지 확인해주세요.');
+            }
+            throw error;
+        }
+    }
+
+    // --- 인증(Authentication) 관련 함수 ---
+    async function login() {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        try {
+            const response = await apiFetch('/api/login', {
+                method: 'POST', body: JSON.stringify({ email, password }),
+            });
+
+            if (response.ok) {
+                const tokenInfo = await response.json();
+                alert('로그인에 성공했습니다!');
+                saveToken(tokenInfo.accessToken);
+                navbar.classList.remove('hidden');
+                await loadMyInfo(); // 로그인 성공 시 내 정보 저장
+                loadCommunityPage();
+            } else {
+                alert(`로그인 실패: ${await response.text()}`);
+            }
+        } catch (error) {}
+    }
+
+    async function requestVerificationCode(type) {
+        const emailInputId = type === 'password' ? 'forgot-email' : 'signup-email';
+        const email = document.getElementById(emailInputId).value;
+        const endpoint = type === 'password' ? '/api/email/password/verification-requests' : '/api/email/verification-requests';
+        try {
+            const response = await apiFetch(endpoint, { method: 'POST', body: JSON.stringify({ email }) });
+            alert(await response.text());
+        } catch(error) {}
+    }
+
+    async function signup() {
+        const signupData = {
+            email: document.getElementById('signup-email').value,
+            verificationCode: document.getElementById('signup-verification-code').value,
+            password: document.getElementById('signup-password').value,
+            username: document.getElementById('signup-name').value,
+            nickname: document.getElementById('signup-nickname').value,
+            grade: document.getElementById('signup-grade').value,
+            department: document.getElementById('signup-department').value,
+        };
+        try {
+            const response = await apiFetch('/api/signup', { method: 'POST', body: JSON.stringify(signupData) });
+            const responseText = await response.text();
+            if(response.ok) {
+                alert(responseText);
+                showPage('page-login');
+            } else {
+                alert(`회원가입 실패: ${responseText}`);
+            }
+        } catch (error) {}
+    }
+
+    function logout() {
+        removeToken();
+        myInfo = null; // 내 정보 초기화
+        navbar.classList.add('hidden');
+        showPage('page-start');
+    }
+
+    // --- 모집 공고(Team) 관련 함수 ---
+    async function loadCommunityPage() {
+        showPage('page-community');
+        const container = document.getElementById('team-list-container');
+        container.innerHTML = '<p>모집 공고를 불러오는 중입니다...</p>';
+        try {
+            const response = await apiFetch('/api/teams');
+            if (response.ok) {
+                const teams = await response.json();
+                renderTeamList(teams);
+            } else {
+                container.innerHTML = '<p>모집 공고를 불러오는 데 실패했습니다.</p>';
+            }
+        } catch (error) {}
+    }
+
+    function renderTeamList(teams) {
+        const container = document.getElementById('team-list-container');
+        container.innerHTML = '';
+        if (teams.length === 0) {
+            container.innerHTML = '<p>아직 등록된 모집 공고가 없습니다. 첫 번째 공고를 작성해보세요!</p>';
+            return;
+        }
+        teams.forEach(team => {
+            const card = document.createElement('div');
+            card.className = "bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all";
+            card.onclick = () => loadTeamDetailPage(team.id); // API 호출로 변경
+            card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full">${team.category}</span>
+                        <span class="text-xs font-medium text-white ${team.status === '모집중' ? 'bg-green-500' : 'bg-gray-500'} px-2 py-1 rounded-full">${team.status}</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2 truncate">${team.title}</h3>
+                    <div class="flex items-center justify-between text-sm text-gray-500 mt-4">
+                        <span>최대 ${team.maxMembers}명</span>
+                        <span>👑 ${team.leaderNickname}</span>
+                    </div>`;
+            container.appendChild(card);
+        });
+    }
+
+    async function loadTeamDetailPage(teamId) {
+        showPage('page-team-detail');
+        const detailContainer = document.getElementById('page-team-detail');
+        detailContainer.innerHTML = '<p>상세 정보를 불러오는 중입니다...</p>';
+        try {
+            const response = await apiFetch(`/api/teams/${teamId}`);
+            if (response.ok) {
+                const team = await response.json();
+                renderTeamDetail(team);
+            } else {
+                detailContainer.innerHTML = `<p>정보를 불러오지 못했습니다: ${await response.text()}</p>`;
+            }
+        } catch(error) {}
+    }
+
+    function renderTeamDetail(team) {
+        // 상세 페이지 렌더링 로직 (향후 구현)
+        const detailContainer = document.getElementById('page-team-detail');
+        detailContainer.innerHTML = `
+                <div class="main-content px-6">
+                    <button onclick="loadCommunityPage()" class="text-sm text-blue-600 hover:underline mb-4">← 목록으로</button>
+                    <div class="bg-white p-8 rounded-lg shadow-lg">
+                        <h1 class="text-3xl font-bold">${team.title}</h1>
+                        <p class="text-gray-500 mt-2">팀장: ${team.leaderNickname}</p>
+                        <p class="mt-4">${team.content}</p>
+                        <!-- 지원, 수정, 삭제 버튼 등 추가 -->
+                    </div>
+                </div>
+            `;
+    }
+
+    // --- 마이페이지 관련 함수 ---
+    async function loadMyInfo() {
+        try {
+            const response = await apiFetch('/api/mypage');
+            if (response.ok) {
+                myInfo = await response.json();
+            }
+        } catch (error) {}
+    }
+
+    async function loadMyPage() {
+        if (!myInfo) await loadMyInfo(); // myInfo가 없으면 불러오기
+        showPage('page-mypage');
+        const mypageContainer = document.getElementById('page-mypage');
+
+        if (myInfo) {
+            mypageContainer.innerHTML = `
+                    <div class="main-content px-6">
+                         <h1 class="text-3xl font-bold mb-8">마이페이지</h1>
+                         <div class="bg-white p-6 rounded-lg shadow-lg">
+                             <p><span class="font-semibold w-20 inline-block">닉네임:</span> ${myInfo.nickname}</p>
+                             <p><span class="font-semibold w-20 inline-block">이름:</span> ${myInfo.username}</p>
+                             <p><span class="font-semibold w-20 inline-block">이메일:</span> ${myInfo.email}</p>
+                             <p><span class="font-semibold w-20 inline-block">학년:</span> ${myInfo.grade}</p>
+                             <p><span class="font-semibold w-20 inline-block">학과:</span> ${myInfo.department}</p>
+                         </div>
+                    </div>
+                 `;
+        } else {
+            mypageContainer.innerHTML = '<p>사용자 정보를 불러오지 못했습니다.</p>';
+        }
+    }
+</script>
+</body>
+</html>
+

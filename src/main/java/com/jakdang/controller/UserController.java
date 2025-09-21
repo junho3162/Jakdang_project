@@ -1,9 +1,6 @@
 package com.jakdang.controller;
 
-import com.jakdang.dto.AddUserRequest;
-import com.jakdang.dto.LoginRequest;
-import com.jakdang.dto.TokenInfo;
-import com.jakdang.dto.UserResponse;
+import com.jakdang.dto.*;
 import com.jakdang.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -67,6 +64,21 @@ public class UserController {
 
         // 조회된 사용자 정보를 HTTP 200 OK 상태와 함께 응답합니다.
         return ResponseEntity.ok(userInfo);
+    }
+
+    /**
+     * 인증 코드를 검증하고 사용자의 비밀번호를 변경하는 API 입니다.
+     * @param request 이메일, 인증코드, 새 비밀번호가 담긴 DTO
+     * @return 성공 메시지 또는 오류 메시지
+     */
+    @PostMapping("/password/change")
+    public ResponseEntity<String> changePassword(@RequestBody PasswordChangeRequest request) {
+        try {
+            userService.changePassword(request);
+            return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
 

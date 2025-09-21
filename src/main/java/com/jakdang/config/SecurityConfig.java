@@ -36,25 +36,18 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-                .httpBasic(AbstractHttpConfigurer::disable) // HTTP Basic 인증 비활성화
-                .formLogin(AbstractHttpConfigurer::disable) // 폼 기반 로그인 비활성화
-                // --- 이 부분이 핵심입니다! ---
-                // CSRF(Cross-Site Request Forgery) 공격 방어 기능을 비활성화합니다.
-                // JWT를 사용하는 REST API 서버에서는 일반적으로 비활성화합니다.
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // 세션을 사용하지 않으므로 STATELESS로 설정
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // 요청 경로에 대한 인가(Authorization) 설정
                 .authorizeHttpRequests(requests -> requests
-                        .requestMatchers("/api/signup", "/api/login").permitAll()
+                        // --- 이 부분이 수정되었습니다! ---
+                        // 회원가입, 로그인, 그리고 모든 이메일 및 비밀번호 변경 관련 API는 인증 없이 접근 허용
+                        .requestMatchers("/api/signup", "/api/login", "/api/email/**", "/api/password/**").permitAll()
+                        // 그 외의 모든 API 요청은 반드시 인증된 사용자만 접근 가능
                         .anyRequest().authenticated()
                 )
-
-                // 우리가 직접 만든 JwtAuthenticationFilter를 UsernamePasswordAuthenticationFilter 전에 추가
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
-
                 .build();
     }
 }

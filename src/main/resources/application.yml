@@ -1,47 +1,40 @@
 # Spring Boot 애플리케이션의 모든 설정을 관리하는 파일입니다.
-# 데이터베이스 정보, 서버 포트 등을 이곳에 정의합니다.
-
-# 서버 포트 설정 (기본값은 8080)
 server:
   port: 8080
 
-# Spring 설정
 spring:
   # 데이터베이스 연결 정보 (DataSource)
   datasource:
-    # MySQL 드라이버 클래스의 전체 경로를 명시적으로 지정해줍니다.
     driver-class-name: com.mysql.cj.jdbc.Driver
-    # (가장 중요!) 접속할 데이터베이스의 주소(URL)입니다.
-    # localhost:3306 -> 내 컴퓨터에서 실행 중인 MySQL 서버
-    # /jakdang_db -> 접속할 데이터베이스 이름
     url: jdbc:mysql://localhost:3306/jakdang_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    # (필수!) 본인의 MySQL 사용자 이름으로 수정해주세요. (보통 'root' 입니다)
     username: root
-    # (필수!) 본인의 MySQL 비밀번호로 수정해주세요. (설치 시 입력한 비밀번호)
     password: 316298
 
   # JPA (Java Persistence API) 설정
   jpa:
     hibernate:
-      # 애플리케이션 실행 시점의 테이블 처리 전략
-      # create: 기존 테이블 삭제 후 다시 생성
-      # update: 변경된 부분만 반영 (개발 시 유용)
-      # validate: 변경사항이 있으면 오류 발생
-      # none: 아무것도 하지 않음 (운영 서버에서 사용)
       ddl-auto: update
     properties:
       hibernate:
-        # JPA가 생성하는 SQL 쿼리를 콘솔에 보여줍니다. (개발 시 유용)
         show_sql: true
-        # SQL 쿼리를 예쁘게 정렬해서 보여줍니다.
         format_sql: true
-    # 데이터베이스와 통신하는 SQL 문법을 MySQL 8 버전에 맞게 설정
     database-platform: org.hibernate.dialect.MySQL8Dialect
 
-# --- 아래 JWT 설정을 추가해주세요 ---
+  # Spring Mail 설정 (올바른 위치로 이동)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: jakdangmoeui.certification@gmail.com
+    password: quhs wpax noct cdvf
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# JWT 설정
 jwt:
-  # JWT를 암호화하고 복호화하는 데 사용될 비밀키입니다.
-  # 외부에 노출되면 안 되는 매우 중요한 정보이며, 실제 서비스에서는 더 복잡하고 긴 문자열을 사용해야 합니다.
   secret: V293IGlzIHRoaXMgc2VjcmV0IGtleT8gSXQgaXMgYSB2ZXJ5IHNlY3JldCBrZXkuIFBsZWFzZSBkb24ndCB0ZWxsIGFueW9uZSE=
-  # Access Token의 유효 시간 (밀리초 단위, 1800000ms = 30분)
   access-token-expiration-millis: 1800000
+

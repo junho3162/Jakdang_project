@@ -9,6 +9,8 @@ import lombok.Setter;
 @Setter
 public class AddUserRequest {
 
+    private String verificationCode; // 사용자가 입력한 이메일 인증 코드
+
     // 프론트엔드에서 받을 데이터 필드들
     private String email;
     private String password;

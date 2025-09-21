@@ -56,6 +56,14 @@ public class User implements UserDetails {
         this.department = department;
     }
 
+    /**
+     * 새로운 암호화된 비밀번호로 현재 비밀번호를 업데이트합니다.
+     * @param newPassword 암호화된 새 비밀번호
+     */
+    public void updatePassword(String newPassword) {
+        this.password = newPassword;
+    }
+
     // --- UserDetails 인터페이스 구현 메소드들 (이전과 동일) ---
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

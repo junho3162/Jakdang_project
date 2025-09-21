@@ -7,7 +7,7 @@ spring:
   # == Render 배포용 (PostgreSQL) 설정 - GitHub에 Push할 때는 이 설정을 사용합니다. ==
   # ===================================================================
   datasource:
-    # url, username, password는 Render 대시보드에서 환경 변수로 주입할 것입니다.
+    driver-class-name: org.postgresql.Driver
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
@@ -18,7 +18,6 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
-    # 통역사를 PostgreSQL용으로 변경합니다.
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
   # ===================================================================
@@ -38,13 +37,12 @@ spring:
   #       format_sql: true
   #   database-platform: org.hibernate.dialect.MySQLDialect
 
-
-  # Spring Mail 설정 (이 부분은 그대로 유지합니다)
+  # Spring Mail 설정 (보안을 위해 비밀번호는 환경 변수로 이동)
   mail:
     host: smtp.gmail.com
     port: 587
     username: jakdangmoeui.certification@gmail.com
-    password: quhs wpax noct cdvf
+    password: ${SPRING_MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -52,8 +50,7 @@ spring:
           starttls:
             enable: true
 
-# JWT 설정 (이 부분은 그대로 유지합니다)
+# JWT 설정 (보안을 위해 secret은 환경 변수로 이동)
 jwt:
-  secret: V293IGlzIHRoaXMgc2VjcmV0IGtleT8gSXQgaXMgYSB2ZXJ5IHNl3JldCBrZXkuIFBsZWFzZSBkb24ndCB0ZWxsIGFueW9uZSE=
+  secret: ${JWT_SECRET}
   access-token-expiration-millis: 1800000
-

@@ -23,6 +23,10 @@ public class TeamController {
     private final TeamService teamService;
     private final ApplicationService applicationService; // ApplicationService 의존성 주입
 
+    /**
+     * 팀 생성 API
+     * POST /api/teams
+     */
     @PostMapping
     public ResponseEntity<TeamResponse> createTeam(@RequestBody CreateTeamRequest request, Authentication authentication) {
         String leaderEmail = authentication.getName();
@@ -30,18 +34,30 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new TeamResponse(createdTeam));
     }
 
+    /**
+     * 모든 팀 조회 API
+     * GET /api/teams
+     */
     @GetMapping
     public ResponseEntity<List<TeamResponse>> getAllTeams() {
         List<TeamResponse> teams = teamService.findAllTeams();
         return ResponseEntity.ok(teams);
     }
 
+    /**
+     * 특정 팀 상세 조회 API
+     * GET /api/teams/{teamId}
+     */
     @GetMapping("/{teamId}")
     public ResponseEntity<TeamResponse> getTeamById(@PathVariable Long teamId) {
         TeamResponse teamInfo = teamService.findTeamById(teamId);
         return ResponseEntity.ok(teamInfo);
     }
 
+    /**
+     * 팀 수정 API
+     * PUT /api/teams/{teamId}
+     */
     @PutMapping("/{teamId}")
     public ResponseEntity<?> updateTeam(@PathVariable Long teamId, @RequestBody UpdateTeamRequest request, Authentication authentication) {
         try {
@@ -55,6 +71,10 @@ public class TeamController {
         }
     }
 
+    /**
+     * 팀 삭제 API
+     * DELETE /api/teams/{teamId}
+     */
     @DeleteMapping("/{teamId}")
     public ResponseEntity<String> deleteTeam(@PathVariable Long teamId, Authentication authentication) {
         try {

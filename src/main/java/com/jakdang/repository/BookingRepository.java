@@ -1,6 +1,7 @@
 package com.jakdang.repository;
 
 import com.jakdang.domain.Booking;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,4 +17,16 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
      * @return 겹치는 예약 목록
      */
     List<Booking> findBySpaceIdAndStartTimeBeforeAndEndTimeAfter(Long spaceId, LocalDateTime endTime, LocalDateTime startTime);
+
+    // 내 예약 전체(옵션: 특정 공간) - 달력/리스트용
+    @EntityGraph(attributePaths = {"space", "user"})
+    List<Booking> findByUserEmailOrderByStartTimeAsc(String email);
+
+    @EntityGraph(attributePaths = {"space", "user"})
+    List<Booking> findByUserEmailAndSpaceIdOrderByStartTimeAsc(String email, Long spaceId);
+
+    // 현황/가용성 조회 시, N+1 방지 위해 fetch join 대체용 EntityGraph
+    @EntityGraph(attributePaths = {"space", "user"})
+    List<Booking> findBySpaceIdAndStartTimeBeforeAndEndTimeAfterOrderByStartTimeAsc(
+            Long spaceId, LocalDateTime endExclusive, LocalDateTime startInclusive);
 }

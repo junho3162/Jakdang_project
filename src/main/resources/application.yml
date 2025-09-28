@@ -26,9 +26,9 @@ spring:
   # ===================================================================
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/jakdang_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3306/jakdang_db?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Seoul
     username: root
-    password: 316298 # Juno님의 MySQL 비밀번호
+    password: qkrwogh8908@ # Juno님의 MySQL 비밀번호
   jpa:
     hibernate:
       ddl-auto: update

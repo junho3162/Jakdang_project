@@ -10,7 +10,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.List; // List import 추가
+import java.util.ArrayList; // ArrayList import 추가
 
 @Entity
 @Getter
@@ -46,14 +47,26 @@ public class User implements UserDetails {
     @Column(name = "department", nullable = false)
     private String department;
 
+    // --- 관심 태그 필드 추가 ---
+    /**
+     * @ElementCollection: 이 필드가 단순한 값(String, Integer 등)의 컬렉션임을 나타냅니다.
+     * JPA는 'user_interest_tags'라는 별도의 테이블을 자동으로 생성하여 이 목록을 관리합니다.
+     * fetch = FetchType.LAZY: User를 조회할 때 당장 태그가 필요 없으면, 나중에 실제 사용할 때 조회하도록 설정 (성능 최적화)
+     */
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "user_interest_tags", joinColumns = @JoinColumn(name = "user_id")) // 연결될 테이블 정보
+    @Column(name = "tag") // 태그가 저장될 컬럼 이름
+    private List<String> interestTags = new ArrayList<>();
+
     @Builder
-    public User(String email, String password, String username, String nickname, String grade, String department) {
+    public User(String email, String password, String username, String nickname, String grade, String department, List<String> interestTags) { // 빌더에 interestTags 추가
         this.email = email;
         this.password = password;
         this.username = username;
         this.nickname = nickname;
         this.grade = grade;
         this.department = department;
+        this.interestTags = interestTags != null ? interestTags : new ArrayList<>(); // null 방지
     }
 
     /**
@@ -62,6 +75,18 @@ public class User implements UserDetails {
      */
     public void updatePassword(String newPassword) {
         this.password = newPassword;
+    }
+
+    /**
+     * 마이페이지에서 프로필 정보를 업데이트하는 메소드입니다.
+     * @param grade 새로운 학년
+     * @param department 새로운 학과
+     * @param interestTags 새로운 관심 태그 목록
+     */
+    public void updateProfile(String grade, String department, List<String> interestTags) {
+        this.grade = grade;
+        this.department = department;
+        this.interestTags = interestTags;
     }
 
     // --- UserDetails 인터페이스 구현 메소드들 (이전과 동일) ---

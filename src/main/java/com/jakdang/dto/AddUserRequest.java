@@ -4,6 +4,8 @@ import com.jakdang.domain.User;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List; // List import 추가
+
 // Lombok: Getter, Setter 메소드를 자동으로 생성해줍니다.
 @Getter
 @Setter
@@ -18,6 +20,7 @@ public class AddUserRequest {
     private String nickname;
     private String grade;
     private String department;
+    private List<String> interestTags; // <-- 관심 태그 필드
 
     // DTO 객체를 User Entity 객체로 변환하는 메소드
     // Service 계층에서 이 메소드를 호출하여 DB에 저장할 User 객체를 생성합니다.
@@ -29,6 +32,7 @@ public class AddUserRequest {
                 .nickname(nickname)
                 .grade(grade)
                 .department(department)
+                .interestTags(interestTags) // <-- 관심 태그를 빌더에 추가
                 .build();
     }
 }

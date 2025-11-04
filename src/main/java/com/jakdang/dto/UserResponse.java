@@ -2,6 +2,7 @@ package com.jakdang.dto;
 
 import com.jakdang.domain.User;
 import lombok.Getter;
+import java.util.List;
 
 /**
  * 마이페이지 조회 등 클라이언트에게 사용자 정보를 응답할 때 사용하는 DTO 입니다.
@@ -15,6 +16,7 @@ public class UserResponse {
     private final String nickname;
     private final String grade;
     private final String department;
+    private final List<String> interestTags; // <-- (수정) 관심 태그 필드 추가
 
     // User 엔티티 객체를 파라미터로 받아, UserResponse DTO 객체로 변환하는 생성자입니다.
     public UserResponse(User user) {
@@ -23,5 +25,6 @@ public class UserResponse {
         this.nickname = user.getNickname();
         this.grade = user.getGrade();
         this.department = user.getDepartment();
+        this.interestTags = user.getInterestTags(); // <-- (수정) 관심 태그 정보 매핑
     }
 }

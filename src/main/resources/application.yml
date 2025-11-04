@@ -1,16 +1,18 @@
 # Spring Boot 애플리케이션의 모든 설정을 관리하는 파일입니다.
-server:
-  port: 8080
-
+# --- spring: 키는 파일 전체에서 딱 한 번만 나와야 합니다. ---
 spring:
+  # --- 1. 로컬 프로필 활성화 ---
+  profiles:
+    active: local
+
   # ===================================================================
-  # == Render 배포용 (PostgreSQL) 설정 - GitHub에 Push할 때는 이 설정을 사용합니다. ==
+  # == 로컬 개발용 (MySQL) 설정 - 이 설정의 주석을 모두 해제합니다. ==
   # ===================================================================
   datasource:
-    driver-class-name: org.postgresql.Driver
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/jakdang_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: root
+    password: 316298 # 본인의 MySQL 비밀번호
   jpa:
     hibernate:
       ddl-auto: update
@@ -18,31 +20,14 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.dialect.MySQLDialect
 
-  # ===================================================================
-  # == 로컬 개발용 (MySQL) 설정 - 내 컴퓨터에서 테스트할 때 이 설정의 주석을 풀고 위 설정을 주석 처리합니다. ==
-  # ===================================================================
-  # datasource:
-  #   driver-class-name: com.mysql.cj.jdbc.Driver
-  #   url: jdbc:mysql://localhost:3306/jakdang_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-  #   username: root
-  #   password: 316298 # 본인의 MySQL 비밀번호
-  # jpa:
-  #   hibernate:
-  #     ddl-auto: update
-  #   properties:
-  #     hibernate:
-  #       show_sql: true
-  #       format_sql: true
-  #   database-platform: org.hibernate.dialect.MySQLDialect
-
-  # Spring Mail 설정 (보안을 위해 비밀번호는 환경 변수로 이동)
+  # --- 3. Spring Mail 설정 ---
   mail:
     host: smtp.gmail.com
     port: 587
     username: jakdangmoeui.certification@gmail.com
-    password: ${SPRING_MAIL_PASSWORD}
+    password: ${SPRING_MAIL_PASSWORD} # 이 값은 application-local.yml이 덮어씁니다.
     properties:
       mail:
         smtp:
@@ -50,7 +35,12 @@ spring:
           starttls:
             enable: true
 
-# JWT 설정 (보안을 위해 secret은 환경 변수로 이동)
+# JWT 설정 (이 부분은 spring: 블록과 다른 레벨이므로 괜찮습니다)
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET} # 이 값은 application-local.yml이 덮어씁니다.
   access-token-expiration-millis: 1800000
+
+# 서버 포트 설정 (맨 위 또는 맨 아래에 배치)
+server:
+  port: 8080
+

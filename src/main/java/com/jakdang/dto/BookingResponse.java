@@ -16,6 +16,7 @@ public class BookingResponse {
     private final LocalDateTime startTime;
     private final LocalDateTime endTime;
 
+
     public BookingResponse(Booking booking) {
         this.bookingId = booking.getId();
         this.spaceName = booking.getSpace().getSpaceName();

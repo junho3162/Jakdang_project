@@ -3,6 +3,7 @@ package com.jakdang.dto;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 새로운 공간 예약을 요청할 때 사용하는 DTO 입니다.

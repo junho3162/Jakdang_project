@@ -1,5 +1,6 @@
 package com.jakdang.controller;
 
+import com.jakdang.domain.UserTag;
 import com.jakdang.dto.*;
 import com.jakdang.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -79,6 +80,28 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    /**
+     * 마이페이지에서 내 관심 태그를 수정하는 API
+     */
+    @PutMapping("/mypage/tags")
+    public ResponseEntity<String> updateMyTags(
+            Authentication authentication,
+            @RequestBody UpdateUserTagsRequest request
+    ) {
+        String userEmail = authentication.getName();
+        userService.updateMyTags(userEmail, request.getTags());
+        return ResponseEntity.ok("관심 태그가 성공적으로 변경되었습니다.");
+    }
+
+    /**
+     * 선택 가능한 전체 태그 목록을 내려주는 API
+     * (마이페이지에서 동글동글 칩 UI 만들 때 사용)
+     */
+    @GetMapping("/tags/options")
+    public ResponseEntity<UserTag[]> getTagOptions() {
+        return ResponseEntity.ok(UserTag.values());
     }
 }
 

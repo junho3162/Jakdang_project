@@ -2,6 +2,7 @@ package com.jakdang.service;
 
 import com.jakdang.config.jwt.JwtTokenProvider;
 import com.jakdang.domain.User;
+import com.jakdang.domain.UserTag;
 import com.jakdang.dto.AddUserRequest;
 import com.jakdang.dto.PasswordChangeRequest;
 import com.jakdang.dto.TokenInfo;
@@ -18,6 +19,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -89,5 +92,14 @@ public class UserService implements UserDetailsService {
 
         // @Transactional 어노테이션에 의해 메소드가 끝나면 변경된 내용이 자동으로 DB에 반영됩니다.
     }
+
+    @Transactional
+    public void updateMyTags(String email, Set<UserTag> tags) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+
+        user.updateTags(tags);
+    }
+
 }
 

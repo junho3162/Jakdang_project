@@ -10,7 +10,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -46,14 +48,33 @@ public class User implements UserDetails {
     @Column(name = "department", nullable = false)
     private String department;
 
+    @ElementCollection(targetClass = UserTag.class)
+    @CollectionTable(
+            name = "user_tags",
+            joinColumns = @JoinColumn(name = "user_id")
+    )
+    @Enumerated(EnumType.STRING)   // ★ enum 이름을 문자열로 저장
+    @Column(name = "tag")
+    private Set<UserTag> tags = new HashSet<>();
+
     @Builder
-    public User(String email, String password, String username, String nickname, String grade, String department) {
+    public User(String email,
+                String password,
+                String username,
+                String nickname,
+                String grade,
+                String department,
+                Set<UserTag> tags) {
+
         this.email = email;
         this.password = password;
         this.username = username;
         this.nickname = nickname;
         this.grade = grade;
         this.department = department;
+        if (tags != null) {
+            this.tags = tags;
+        }
     }
 
     /**
@@ -95,5 +116,28 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() { return true; }
+
+    // --- 태그 관련 비즈니스 메서드 ---
+    public void addTag(UserTag tag) {
+        if (tag == null) return;
+        this.tags.add(tag);
+    }
+
+    public void addTags(Collection<UserTag> tags) {
+        if (tags == null) return;
+        this.tags.addAll(tags);
+    }
+
+    public void removeTag(UserTag tag) {
+        if (tag == null) return;
+        this.tags.remove(tag);
+    }
+
+    public void updateTags(Collection<UserTag> newTags) {
+        this.tags.clear();
+        if (newTags != null) {
+            this.tags.addAll(newTags);
+        }
+    }
 }
 

@@ -1,6 +1,7 @@
 package com.jakdang.controller;
 
 import com.jakdang.domain.Team;
+import com.jakdang.domain.TeamTag;
 import com.jakdang.dto.*;
 import com.jakdang.service.ApplicationService;
 import com.jakdang.service.TeamService;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -53,6 +55,20 @@ public class TeamController {
         TeamResponse teamInfo = teamService.findTeamById(teamId);
         return ResponseEntity.ok(teamInfo);
     }
+
+    /**
+     * 특정 팀 검색 기능 API
+     * GET /api/teams/search
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<TeamResponse>> searchTeams(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Set<TeamTag> tags
+    ) {
+        List<TeamResponse> result = teamService.searchTeams(keyword, tags);
+        return ResponseEntity.ok(result);
+    }
+
 
     /**
      * 팀 수정 API

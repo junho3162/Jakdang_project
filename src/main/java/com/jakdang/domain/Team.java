@@ -5,8 +5,12 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 모집 공고(팀) 정보를 담는 Entity 클래스입니다.
@@ -38,6 +42,20 @@ public class Team {
     @Column(name = "max_members", nullable = false)
     private int maxMembers; // 최대 모집 인원
 
+    // 모집 마감 기한
+    @Column(name = "deadline")
+    private LocalDate deadline;
+
+    // 팀 해시태그
+    @ElementCollection(targetClass = TeamTag.class)
+    @CollectionTable(
+            name = "team_tags",
+            joinColumns = @JoinColumn(name = "team_id")
+    )
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tag")
+    private Set<TeamTag> tags = new HashSet<>();
+
     // User와의 다대일(N:1) 관계 설정
     // 여러 개의 팀(Team)은 한 명의 사용자(User)에 의해 생성될 수 있습니다.
     @ManyToOne(fetch = FetchType.LAZY)
@@ -49,13 +67,17 @@ public class Team {
     // private List<User> members = new ArrayList<>();
 
     @Builder
-    public Team(String title, String content, String category, String status, int maxMembers, User leader) {
+    public Team(String title, String content, String category, String status, int maxMembers, User leader, Set<TeamTag> tags, LocalDate deadline) {
         this.title = title;
         this.content = content;
         this.category = category;
         this.status = status;
         this.maxMembers = maxMembers;
         this.leader = leader;
+        if (tags != null) {
+            this.tags = tags;
+        }
+        this.deadline = deadline;
     }
 
     /**
@@ -63,11 +85,15 @@ public class Team {
      * - 서비스 계층의 코드를 더 깔끔하게 유지할 수 있습니다.
      * - 이 메소드는 @Transactional 환경에서 호출되면 변경된 내용이 자동으로 데이터베이스에 반영됩니다.
      */
-    public void update(String title, String content, String category, String status, int maxMembers) {
+    public void update(String title, String content, String category, String status, int maxMembers, LocalDate deadline, Set<TeamTag> tags) {
         this.title = title;
         this.content = content;
         this.category = category;
         this.status = status;
         this.maxMembers = maxMembers;
+        this.deadline = deadline;
+        if (tags != null) {
+            this.tags.addAll(tags);
+        }
     }
 }

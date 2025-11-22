@@ -1,6 +1,7 @@
 package com.jakdang.service;
 
 import com.jakdang.domain.Team;
+import com.jakdang.domain.TeamTag;
 import com.jakdang.domain.User;
 import com.jakdang.dto.CreateTeamRequest;
 import com.jakdang.dto.TeamResponse;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -52,6 +54,26 @@ public class TeamService {
     }
 
     /**
+     * 모든 모집 공고 목록에서 검색하는 메소드입니다.
+     */
+    public List<TeamResponse> searchTeams(String keyword, Set<TeamTag> tags) {
+        List<Team> teams;
+
+        if (keyword != null && tags != null) {
+            teams = teamRepository.searchByKeywordAndTags(keyword, tags);
+        } else if (keyword != null) {
+            teams = teamRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword);
+        } else if (tags != null) {
+            teams = teamRepository.findByTags(tags);
+        } else {
+            teams = teamRepository.findAll();
+        }
+
+        return teams.stream().map(TeamResponse::new).toList();
+    }
+
+
+    /**
      * ID를 기반으로 특정 모집 공고의 상세 정보를 조회하는 메소드입니다.
      */
     @Transactional(readOnly = true)
@@ -73,17 +95,23 @@ public class TeamService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 ID의 팀을 찾을 수 없습니다: " + teamId));
 
-        // (핵심!) 현재 로그인한 사용자가 공고의 작성자(팀장)가 맞는지 확인합니다.
         if (!Objects.equals(team.getLeader().getEmail(), userEmail)) {
             throw new AccessDeniedException("공고를 수정할 권한이 없습니다.");
         }
 
-        // Team 엔티티 내부의 update 메소드를 호출하여 정보를 수정합니다.
-        team.update(request.getTitle(), request.getContent(), request.getCategory(), request.getStatus(), request.getMaxMembers());
+        team.update(
+                request.getTitle(),
+                request.getContent(),
+                request.getCategory(),
+                request.getStatus(),
+                request.getMaxMembers(),
+                request.getDeadline(),
+                request.getTags()
+        );
 
-        // @Transactional 어노테이션 덕분에, 메소드가 끝나면 변경된 내용이 자동으로 DB에 반영됩니다. (따로 save를 호출할 필요가 없습니다.)
         return new TeamResponse(team);
     }
+
 
     /**
      * 특정 모집 공고를 삭제하는 메소드입니다.

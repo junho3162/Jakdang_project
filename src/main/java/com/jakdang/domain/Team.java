@@ -5,8 +5,9 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDate; // (추가) 기한(날짜)을 저장하기 위해 import
+import java.util.ArrayList; // (추가) List import
+import java.util.List;       // (추가) List import
 
 /**
  * 모집 공고(팀) 정보를 담는 Entity 클래스입니다.
@@ -24,50 +25,66 @@ public class Team {
     private Long id;
 
     @Column(name = "title", nullable = false)
-    private String title; // 공고 제목
+    private String title; // "제목"
 
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
-    private String content; // 공고 내용
+    private String content; // "내용"
 
     @Column(name = "category", nullable = false)
-    private String category; // 카테고리 (공모전, 스터디 등)
+    private String category; // "해시태그" (기획상 1개 선택이므로 String 유지)
 
     @Column(name = "status", nullable = false)
     private String status; // 모집 상태 (모집중, 모집완료)
 
     @Column(name = "max_members", nullable = false)
-    private int maxMembers; // 최대 모집 인원
+    private int maxMembers; // 최대 모집 인원 (기존 필드 활용)
 
-    // User와의 다대일(N:1) 관계 설정
-    // 여러 개의 팀(Team)은 한 명의 사용자(User)에 의해 생성될 수 있습니다.
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "leader_id") // 외래키(FK) 컬럼 이름을 'leader_id'로 지정
+    // (수정!) FetchType.EAGER로 변경 (팀장 정보는 목록에서 바로 필요)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "leader_id")
     private User leader; // 팀장 정보
 
-    // (향후 확장용) 팀 멤버 목록 - 지금은 사용하지 않지만 미리 구조를 잡아둡니다.
-    // @ManyToMany
-    // private List<User> members = new ArrayList<>();
+    // --- (신규) '기한' 필드 추가 ---
+    @Column(name = "deadline")
+    private LocalDate deadline; // 모집 마감 기한
+
+    // --- (신규) '사진/포트폴리오' 필드 추가 ---
+    @Column(name = "file_url")
+    private String fileUrl; // 업로드된 파일의 저장 경로 또는 URL
+
+    // --- (신규) '구하는 팀원' 필드 추가 ---
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "team_required_roles", joinColumns = @JoinColumn(name = "team_id"))
+    @Column(name = "role_name")
+    private List<String> requiredRoles = new ArrayList<>(); // 예: ["개발자", "디자이너"]
+
 
     @Builder
-    public Team(String title, String content, String category, String status, int maxMembers, User leader) {
+    public Team(String title, String content, String category, String status, int maxMembers, User leader, LocalDate deadline, String fileUrl, List<String> requiredRoles) {
         this.title = title;
         this.content = content;
         this.category = category;
         this.status = status;
         this.maxMembers = maxMembers;
         this.leader = leader;
+        this.deadline = deadline; // (추가)
+        this.fileUrl = fileUrl; // (추가)
+        this.requiredRoles = requiredRoles; // (추가)
     }
 
-    /**
-     * DTO의 데이터를 기반으로 자신의 필드를 직접 수정하는 메소드입니다.
-     * - 서비스 계층의 코드를 더 깔끔하게 유지할 수 있습니다.
-     * - 이 메소드는 @Transactional 환경에서 호출되면 변경된 내용이 자동으로 데이터베이스에 반영됩니다.
-     */
-    public void update(String title, String content, String category, String status, int maxMembers) {
+    // (수정!) update 메소드에도 신규 필드 추가
+    public void update(String title, String content, String category, String status, int maxMembers, LocalDate deadline, List<String> requiredRoles) {
         this.title = title;
         this.content = content;
         this.category = category;
         this.status = status;
         this.maxMembers = maxMembers;
+        this.deadline = deadline;
+        this.requiredRoles = requiredRoles;
+    }
+
+    // (신규) 파일 URL을 설정하는 별도 메소드
+    public void setFileUrl(String fileUrl) {
+        this.fileUrl = fileUrl;
     }
 }

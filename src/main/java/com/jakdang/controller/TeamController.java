@@ -1,49 +1,78 @@
 package com.jakdang.controller;
 
 import com.jakdang.domain.Team;
-import com.jakdang.dto.*;
+import com.jakdang.dto.ApplyTeamRequest;
+import com.jakdang.dto.ApplicationResponse;
+import com.jakdang.dto.CreateTeamRequest;
+import com.jakdang.dto.TeamResponse;
+import com.jakdang.dto.UpdateTeamRequest;
 import com.jakdang.service.ApplicationService;
 import com.jakdang.service.TeamService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType; // (추가!)
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile; // (추가!)
 
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/teams")
+@RequestMapping("/api/teams") // 이 컨트롤러의 모든 API는 "/api/teams"로 시작
 public class TeamController {
 
     private final TeamService teamService;
-    private final ApplicationService applicationService; // ApplicationService 의존성 주입
+    private final ApplicationService applicationService; // 팀 지원/관리를 위해 주입
 
-    @PostMapping
-    public ResponseEntity<TeamResponse> createTeam(@RequestBody CreateTeamRequest request, Authentication authentication) {
+    /**
+     * (대폭 수정!)
+     * 새로운 모집 공고를 생성하는 API 입니다. (파일 업로드 포함)
+     * consumes = MediaType.MULTIPART_FORM_DATA_VALUE -> 이제 JSON이 아닌 FormData를 받습니다.
+     */
+    @PostMapping(consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<TeamResponse> createTeam(
+            @RequestPart("requestDto") CreateTeamRequest request, // 1. JSON 데이터
+            @RequestPart(value = "file", required = false) MultipartFile file, // 2. (선택적) 파일 데이터
+            Authentication authentication) {
+
         String leaderEmail = authentication.getName();
-        Team createdTeam = teamService.createTeam(request, leaderEmail);
+
+        // 3. Service에 DTO와 file을 함께 전달
+        Team createdTeam = teamService.createTeam(request, file, leaderEmail);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(new TeamResponse(createdTeam));
     }
 
+    /**
+     * 모든 모집 공고 목록을 조회하는 API 입니다.
+     */
     @GetMapping
     public ResponseEntity<List<TeamResponse>> getAllTeams() {
         List<TeamResponse> teams = teamService.findAllTeams();
         return ResponseEntity.ok(teams);
     }
 
+    /**
+     * 특정 ID의 모집 공고 상세 정보를 조회하는 API 입니다.
+     */
     @GetMapping("/{teamId}")
     public ResponseEntity<TeamResponse> getTeamById(@PathVariable Long teamId) {
         TeamResponse teamInfo = teamService.findTeamById(teamId);
         return ResponseEntity.ok(teamInfo);
     }
 
+    /**
+     * (수정!) 특정 ID의 모집 공고를 수정하는 API 입니다. (파일 수정은 일단 제외)
+     * (참고) 파일 수정을 원하면 이 API도 Post처럼 Multipart로 변경해야 합니다.
+     */
     @PutMapping("/{teamId}")
-    public ResponseEntity<?> updateTeam(@PathVariable Long teamId, @RequestBody UpdateTeamRequest request, Authentication authentication) {
+    public ResponseEntity<?> updateTeam(@PathVariable Long teamId,
+                                        @RequestBody UpdateTeamRequest request,
+                                        Authentication authentication) {
         try {
             String userEmail = authentication.getName();
             TeamResponse updatedTeam = teamService.updateTeam(teamId, request, userEmail);
@@ -55,6 +84,9 @@ public class TeamController {
         }
     }
 
+    /**
+     * 특정 ID의 모집 공고를 삭제하는 API 입니다.
+     */
     @DeleteMapping("/{teamId}")
     public ResponseEntity<String> deleteTeam(@PathVariable Long teamId, Authentication authentication) {
         try {
@@ -68,12 +100,10 @@ public class TeamController {
         }
     }
 
+    // --- 팀 지원 및 관리 API ---
+
     /**
      * 특정 팀에 지원하는 API 입니다.
-     * @param teamId 지원할 팀의 ID
-     * @param request 지원 메시지가 담긴 DTO
-     * @param authentication 현재 로그인한 사용자 정보
-     * @return 성공 메시지 또는 오류 메시지
      */
     @PostMapping("/{teamId}/apply")
     public ResponseEntity<String> applyToTeam(@PathVariable Long teamId, @RequestBody ApplyTeamRequest request, Authentication authentication) {
@@ -81,20 +111,13 @@ public class TeamController {
             String applicantEmail = authentication.getName();
             applicationService.applyToTeam(teamId, request, applicantEmail);
             return ResponseEntity.ok("팀 지원이 성공적으로 완료되었습니다.");
-        } catch (IllegalArgumentException | UsernameNotFoundException e) {
-            // Service에서 발생시킨 비즈니스 규칙 위반(팀장 지원, 팀 없음 등) 또는 사용자 없음 예외를 처리합니다.
-            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            // 그 외 예상치 못한 서버 내부 오류를 처리합니다.
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("지원 처리 중 오류가 발생했습니다.");
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     /**
      * 특정 팀의 지원자 목록을 조회하는 API 입니다. (팀장 전용)
-     * @param teamId 조회할 팀의 ID
-     * @param authentication 현재 로그인한 사용자 정보
-     * @return 해당 팀의 지원자 리스트
      */
     @GetMapping("/{teamId}/applications")
     public ResponseEntity<?> getApplicationsByTeam(@PathVariable Long teamId, Authentication authentication) {
@@ -111,11 +134,6 @@ public class TeamController {
 
     /**
      * 특정 지원서의 상태를 변경(수락/거절)하는 API 입니다. (팀장 전용)
-     * @param teamId 팀 ID (URL 경로 일관성을 위해 포함)
-     * @param applicationId 처리할 지원서 ID
-     * @param payload 새로운 상태 정보 (예: {"status": "ACCEPTED"})
-     * @param authentication 현재 로그인한 사용자 정보
-     * @return 상태가 변경된 지원서 정보
      */
     @PatchMapping("/{teamId}/applications/{applicationId}")
     public ResponseEntity<?> updateApplicationStatus(@PathVariable Long teamId,
@@ -126,7 +144,6 @@ public class TeamController {
             String userEmail = authentication.getName();
             String newStatus = payload.get("status");
 
-            // 상태 값이 제대로 전달되었는지, 그리고 유효한 값인지 확인합니다.
             if (newStatus == null || (!newStatus.equals("ACCEPTED") && !newStatus.equals("REJECTED"))) {
                 return ResponseEntity.badRequest().body("잘못된 상태 값입니다. 'ACCEPTED' 또는 'REJECTED'만 가능합니다.");
             }
@@ -134,10 +151,8 @@ public class TeamController {
             ApplicationResponse updatedApplication = applicationService.updateApplicationStatus(applicationId, newStatus, userEmail);
             return ResponseEntity.ok(updatedApplication);
         } catch (AccessDeniedException e) {
-            // Service에서 권한 없음 예외 발생 시, 403 Forbidden 응답
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (IllegalArgumentException e) {
-            // Service에서 해당 ID를 찾지 못했을 때, 400 Bad Request 응답
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }

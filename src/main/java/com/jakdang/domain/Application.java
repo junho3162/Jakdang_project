@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 팀 지원 정보를 담는 Entity 클래스입니다.
+ * 팀 지원서 정보를 담는 Entity 클래스입니다.
  * 데이터베이스의 'applications' 테이블과 직접 매핑됩니다.
  */
 @Entity
@@ -21,39 +21,37 @@ public class Application {
     @Column(name = "application_id")
     private Long id;
 
-    // 지원자 정보 (N:1 관계)
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "applicant_id")
-    private User applicant;
+    // N:1 (다대일) 관계 - 한 명의 사용자는 여러 개의 지원서를 쓸 수 있습니다.
+    @ManyToOne(fetch = FetchType.LAZY) // (수정) EAGER -> LAZY로 변경 (성능 최적화)
+    @JoinColumn(name = "user_id") // DB에 저장될 외래 키 컬럼 이름
+    private User applicant; // 지원자
 
-    // 지원한 팀 정보 (N:1 관계)
+    // N:1 (다대일) 관계 - 하나의 팀에는 여러 개의 지원서가 올 수 있습니다.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id")
-    private Team team;
+    @JoinColumn(name = "team_id") // DB에 저장될 외래 키 컬럼 이름
+    private Team team; // 지원한 팀
 
     @Column(name = "message", columnDefinition = "TEXT")
     private String message; // 지원 메시지
 
-    @Column(name = "portfolio_url")
-    private String portfolioUrl; // 포트폴리오 파일 경로 (향후 확장용)
+    // (핵심!) 'status' 필드
+    @Column(name = "status", nullable = false)
+    private String status; // 지원 상태 (예: "대기중", "ACCEPTED", "REJECTED")
 
-    @Column(name = "status")
-    private String status; // 지원 상태 (대기중, 수락, 거절)
+    // (제거!) 'portfolioUrl' 필드는 현재 기획(DTO)에서 사용되지 않으므로 제거합니다.
 
     @Builder
-    public Application(User applicant, Team team, String message) {
+    public Application(User applicant, Team team, String message, String status) { // (수정!) Builder가 status를 받도록 변경
         this.applicant = applicant;
         this.team = team;
         this.message = message;
-        this.status = "대기중"; // 지원서 생성 시 기본 상태는 '대기중'
+        this.status = status; // (수정!) Builder를 통해 status를 주입받음
     }
 
     /**
-     * 지원서의 상태를 변경하는 메소드입니다.
-     * @param newStatus 새로운 상태 ("수락", "거절" 등)
+     * 지원서의 상태를 업데이트하는 메소드입니다. (예: "대기중" -> "ACCEPTED")
      */
     public void updateStatus(String newStatus) {
         this.status = newStatus;
     }
 }
-

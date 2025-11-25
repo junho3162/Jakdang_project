@@ -1,6 +1,7 @@
 package com.jakdang.controller;
 
 import com.jakdang.dto.*;
+import com.jakdang.service.ApplicationService; // 1. (추가) ApplicationService import
 import com.jakdang.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -9,13 +10,17 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List; // 2. (추가) List import
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
 public class UserController {
 
     private final UserService userService;
+    private final ApplicationService applicationService; // 3. (추가) ApplicationService 의존성 주입
 
+    // --- (기존 API: signup, login) ---
     @PostMapping("/signup")
     public ResponseEntity<String> signup(@RequestBody AddUserRequest request) {
         try {
@@ -40,6 +45,7 @@ public class UserController {
         }
     }
 
+    // --- (기존 API: getMyInfo, changePassword, updateProfile) ---
     @GetMapping("/mypage")
     public ResponseEntity<UserResponse> getMyInfo(Authentication authentication) {
         String userEmail = authentication.getName();
@@ -57,13 +63,6 @@ public class UserController {
         }
     }
 
-    /**
-     * [신규 추가!]
-     * 인증된 사용자의 프로필 정보(학년, 학과, 관심 태그)를 수정합니다.
-     * @param request 수정할 프로필 정보가 담긴 DTO
-     * @param authentication 현재 로그인한 사용자 정보
-     * @return 성공 메시지 또는 오류 메시지
-     */
     @PutMapping("/mypage")
     public ResponseEntity<String> updateProfile(@RequestBody ProfileUpdateRequest request, Authentication authentication) {
         try {
@@ -74,6 +73,22 @@ public class UserController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    /**
+     * 4. [신규 추가!]
+     * 인증된 사용자가 지원한 모든 공고의 현황(승인/대기/거절)을 조회합니다.
+     * @param authentication 현재 로그인한 사용자 정보
+     * @return 내 지원 현황 DTO 리스트
+     */
+    @GetMapping("/mypage/applications")
+    public ResponseEntity<?> getMyApplications(Authentication authentication) {
+        try {
+            String userEmail = authentication.getName();
+            // 5. ApplicationService의 새 메소드 호출
+            List<MyApplicationResponse> myApplications = applicationService.findMyApplications(userEmail);
+            return ResponseEntity.ok(myApplications);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
-
-

@@ -18,11 +18,18 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+<<<<<<< HEAD
 
     // --- 이 부분이 수정되었습니다! ---
     // runtimeOnly 'org.postgresql:postgresql'      // Render 배포용(PostgreSQL) 드라이버는 주석 처리합니다.
     runtimeOnly 'com.mysql:mysql-connector-j'      // 로컬 개발용(MySQL) 드라이버의 주석을 다시 해제합니다.
 
+=======
+    // --- PostgreSQL 드라이버는 주석 처리합니다. ---
+    // runtimeOnly 'org.postgresql:postgresql'
+    // --- MySQL 드라이버의 주석을 다시 해제합니다. ---
+    runtimeOnly 'com.mysql:mysql-connector-j'
+>>>>>>> 30c61506be0a47c3fa5995aebeb911b8f9489200
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 

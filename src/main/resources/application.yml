@@ -13,13 +13,38 @@ spring:
   # --- ---
   
   # ===================================================================
+<<<<<<< HEAD
+=======
+  # == Render 배포용 (PostgreSQL) 설정 - 주석 처리합니다. ==
+  # ===================================================================
+  # datasource:
+  #   # url, username, password는 Render 대시보드에서 환경 변수로 주입할 것입니다.
+  #   url: ${SPRING_DATASOURCE_URL}
+  #   username: ${SPRING_DATASOURCE_USERNAME}
+  #   password: ${SPRING_DATASOURCE_PASSWORD}
+  # jpa:
+  #   hibernate:
+  #     ddl-auto: update
+  #   properties:
+  #     hibernate:
+  #       show_sql: true
+  #       format_sql: true
+  #   # 통역사를 PostgreSQL용으로 변경합니다.
+  #   database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  # ===================================================================
+>>>>>>> 30c61506be0a47c3fa5995aebeb911b8f9489200
   # == 로컬 개발용 (MySQL) 설정 - 이 설정의 주석을 모두 해제합니다. ==
   # ===================================================================
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/jakdang_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: root
+<<<<<<< HEAD
     password: 316298 # 본인의 MySQL 비밀번호
+=======
+    password: 316298 # Juno님의 MySQL 비밀번호
+>>>>>>> 30c61506be0a47c3fa5995aebeb911b8f9489200
   jpa:
     hibernate:
       ddl-auto: update
@@ -29,12 +54,21 @@ spring:
         format_sql: true
     database-platform: org.hibernate.dialect.MySQLDialect
 
+<<<<<<< HEAD
   # --- 3. Spring Mail 설정 ---
+=======
+
+  # Spring Mail 설정 (보안을 위해 비밀번호는 환경 변수로 이동 - 로컬에서도 동일하게 사용 가능)
+>>>>>>> 30c61506be0a47c3fa5995aebeb911b8f9489200
   mail:
     host: smtp.gmail.com
     port: 587
     username: jakdangmoeui.certification@gmail.com
+<<<<<<< HEAD
     password: ${SPRING_MAIL_PASSWORD} # 이 값은 application-local.yml이 덮어씁니다.
+=======
+    password: quhs wpax noct cdvf
+>>>>>>> 30c61506be0a47c3fa5995aebeb911b8f9489200
     properties:
       mail:
         smtp:
@@ -42,6 +76,7 @@ spring:
           starttls:
             enable: true
 
+<<<<<<< HEAD
 # JWT 설정 (이 부분은 spring: 블록과 다른 레벨이므로 괜찮습니다)
 jwt:
   secret: ${JWT_SECRET} # 이 값은 application-local.yml이 덮어씁니다.
@@ -51,3 +86,10 @@ jwt:
 server:
   port: 8080
 
+=======
+# JWT 설정 (보안을 위해 secret은 환경 변수로 이동 - 로컬에서도 동일하게 사용 가능)
+jwt:
+  secret: 293IGlzIHRoaXMgc2VjcmV0IGtleT8gSXQgaXMgYSB2ZXJ5IHNlY3JldCBrZXkuIFBsZWFzZSBkb24ndCB0ZWxsIGFueW9uZSE=
+  access-token-expiration-millis: 1800000
+
+>>>>>>> 30c61506be0a47c3fa5995aebeb911b8f9489200

@@ -64,13 +64,14 @@ public class TeamService {
         } else if (keyword != null) {
             teams = teamRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword);
         } else if (tags != null) {
-            teams = teamRepository.findByTags(tags);
+            teams = teamRepository.findByTagsIn(tags);
         } else {
             teams = teamRepository.findAll();
         }
 
         return teams.stream().map(TeamResponse::new).toList();
     }
+
 
 
     /**
@@ -106,7 +107,10 @@ public class TeamService {
                 request.getStatus(),
                 request.getMaxMembers(),
                 request.getDeadline(),
-                request.getTags()
+                request.getTags(),
+                request.getStartTime(),
+                request.getEndTime(),
+                request.getRecruitRoles()
         );
 
         return new TeamResponse(team);

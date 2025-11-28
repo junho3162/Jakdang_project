@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +47,18 @@ public class Team {
     @Column(name = "deadline")
     private LocalDate deadline;
 
+    // ✅ 활동/모임 시간 (예: 08:00 ~ 12:00)
+    @Column(name = "start_time")
+    private LocalTime startTime;   // 시작 시간
+
+    @Column(name = "end_time")
+    private LocalTime endTime;     // 종료 시간
+
+    // ✅ 구하는 팀원 역할을 한 번에 적어두는 텍스트
+    // 예) "기획 1명, 디자이너 1명, 개발자 2명"
+    @Column(name = "recruit_roles", columnDefinition = "TEXT")
+    private String recruitRoles;
+
     // 팀 해시태그
     @ElementCollection(targetClass = TeamTag.class)
     @CollectionTable(
@@ -67,33 +80,46 @@ public class Team {
     // private List<User> members = new ArrayList<>();
 
     @Builder
-    public Team(String title, String content, String category, String status, int maxMembers, User leader, Set<TeamTag> tags, LocalDate deadline) {
+    public Team(String title, String content, String category, String status, int maxMembers, User leader,
+                Set<TeamTag> tags, LocalDate deadline, LocalTime startTime, LocalTime endTime, String recruitRoles) {
         this.title = title;
         this.content = content;
         this.category = category;
         this.status = status;
         this.maxMembers = maxMembers;
         this.leader = leader;
-        if (tags != null) {
-            this.tags = tags;
-        }
+
+        if (tags != null) { this.tags = tags; }
+
         this.deadline = deadline;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.recruitRoles = recruitRoles;
     }
+
 
     /**
      * DTO의 데이터를 기반으로 자신의 필드를 직접 수정하는 메소드입니다.
      * - 서비스 계층의 코드를 더 깔끔하게 유지할 수 있습니다.
      * - 이 메소드는 @Transactional 환경에서 호출되면 변경된 내용이 자동으로 데이터베이스에 반영됩니다.
      */
-    public void update(String title, String content, String category, String status, int maxMembers, LocalDate deadline, Set<TeamTag> tags) {
+    public void update(String title, String content, String category, String status, int maxMembers,
+                       LocalDate deadline, Set<TeamTag> tags, LocalTime startTime, LocalTime endTime, String recruitRoles) {
         this.title = title;
         this.content = content;
         this.category = category;
         this.status = status;
         this.maxMembers = maxMembers;
         this.deadline = deadline;
+
         if (tags != null) {
+            this.tags.clear();
             this.tags.addAll(tags);
         }
+
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.recruitRoles = recruitRoles;
     }
+
 }

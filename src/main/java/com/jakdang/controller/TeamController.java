@@ -136,7 +136,7 @@ public class TeamController {
     public ResponseEntity<?> getApplicationsByTeam(@PathVariable Long teamId, Authentication authentication) {
         try {
             String userEmail = authentication.getName();
-            List<ApplicationResponse> applications = applicationService.findApplicationsByTeam(teamId, userEmail);
+            List<ApplicationResponse> applications = applicationService.getApplicationsForTeam(teamId, userEmail);
             return ResponseEntity.ok(applications);
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
@@ -147,11 +147,13 @@ public class TeamController {
 
     /**
      * 특정 지원서의 상태를 변경(수락/거절)하는 API 입니다. (팀장 전용)
-     * @param teamId 팀 ID (URL 경로 일관성을 위해 포함)
-     * @param applicationId 처리할 지원서 ID
-     * @param payload 새로운 상태 정보 (예: {"status": "ACCEPTED"})
-     * @param authentication 현재 로그인한 사용자 정보
-     * @return 상태가 변경된 지원서 정보
+     *
+     * 요청 Body 예시:
+     * {
+     *   "status": "ACCEPTED"   // 또는 "REJECTED"
+     * }
+     *
+     * 내부적으로는 "수락", "거절" 한글 상태로 변환하여 저장합니다.
      */
     @PatchMapping("/{teamId}/applications/{applicationId}")
     public ResponseEntity<?> updateApplicationStatus(@PathVariable Long teamId,
@@ -162,20 +164,21 @@ public class TeamController {
             String userEmail = authentication.getName();
             String newStatus = payload.get("status");
 
-            // 상태 값이 제대로 전달되었는지, 그리고 유효한 값인지 확인합니다.
-            if (newStatus == null || (!newStatus.equals("ACCEPTED") && !newStatus.equals("REJECTED"))) {
-                return ResponseEntity.badRequest().body("잘못된 상태 값입니다. 'ACCEPTED' 또는 'REJECTED'만 가능합니다.");
+            if (newStatus == null ||
+                    !(newStatus.equals("ACCEPTED") || newStatus.equals("REJECTED"))) {
+                return ResponseEntity.badRequest()
+                        .body("잘못된 상태 값입니다. 'ACCEPTED' 또는 'REJECTED'만 가능합니다.");
             }
 
-            ApplicationResponse updatedApplication = applicationService.updateApplicationStatus(applicationId, newStatus, userEmail);
+            ApplicationResponse updatedApplication =
+                    applicationService.updateApplicationStatus(applicationId, newStatus, userEmail);
+
             return ResponseEntity.ok(updatedApplication);
+
         } catch (AccessDeniedException e) {
-            // Service에서 권한 없음 예외 발생 시, 403 Forbidden 응답
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (IllegalArgumentException e) {
-            // Service에서 해당 ID를 찾지 못했을 때, 400 Bad Request 응답
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 }
-

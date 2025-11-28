@@ -5,6 +5,7 @@ import com.jakdang.domain.TeamTag;
 import lombok.Getter;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Set;
 
 /**
@@ -22,6 +23,9 @@ public class TeamResponse {
     private final String leaderNickname; // 팀장의 전체 정보 대신 닉네임만 포함
     private LocalDate deadline;
     private Set<TeamTag> tags;
+    private LocalTime startTime;
+    private LocalTime endTime;
+    private String recruitRoles;
 
     // Team 엔티티를 파라미터로 받아, TeamResponse DTO로 변환하는 생성자입니다.
     public TeamResponse(Team team) {
@@ -34,6 +38,10 @@ public class TeamResponse {
         this.deadline = team.getDeadline();
         this.tags = team.getTags();
         this.leaderNickname = team.getLeader().getNickname();
+
+        this.startTime = team.getStartTime();
+        this.endTime = team.getEndTime();
+        this.recruitRoles = team.getRecruitRoles();
 
     }
 }

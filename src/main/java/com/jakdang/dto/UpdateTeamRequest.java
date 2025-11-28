@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Set;
 
 /**
@@ -20,4 +21,7 @@ public class UpdateTeamRequest {
     private int maxMembers;
     private Set<TeamTag> tags;
     private LocalDate deadline;
+    private LocalTime startTime;
+    private LocalTime endTime;
+    private String recruitRoles;
 }

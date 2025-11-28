@@ -41,11 +41,11 @@ public class Application {
     private String status; // 지원 상태 (대기중, 수락, 거절)
 
     @Builder
-    public Application(User applicant, Team team, String message) {
+    public Application(User applicant, Team team, String message, String status) {
         this.applicant = applicant;
         this.team = team;
         this.message = message;
-        this.status = "대기중"; // 지원서 생성 시 기본 상태는 '대기중'
+        this.status = "PENDING"; // 지원서 생성 시 기본 상태는 '대기중'
     }
 
     /**

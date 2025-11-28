@@ -4,6 +4,7 @@ import com.jakdang.domain.Application;
 import com.jakdang.domain.Team;
 import com.jakdang.domain.User;
 import com.jakdang.dto.ApplicationResponse;
+import com.jakdang.dto.MyApplicationResponse;
 import com.jakdang.dto.ApplyTeamRequest;
 import com.jakdang.repository.ApplicationRepository;
 import com.jakdang.repository.TeamRepository;
@@ -31,88 +32,106 @@ public class ApplicationService {
 
     /**
      * 특정 팀에 지원서를 제출하는 메소드입니다.
-     * @param teamId 지원할 팀의 ID
-     * @param request 지원서 내용(메시지)
+     *
+     * @param teamId         지원할 팀의 ID
+     * @param request        지원서 내용(메시지)
      * @param applicantEmail 지원자의 이메일
      * @return 생성된 Application 엔티티
      */
     @Transactional
     public Application applyToTeam(Long teamId, ApplyTeamRequest request, String applicantEmail) {
-        // 지원자 정보를 DB에서 조회합니다.
-        User applicant = userRepository.findByEmail(applicantEmail)
-                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + applicantEmail));
-
-        // 지원할 팀 정보를 DB에서 조회합니다.
+        // 1. 지원할 팀을 조회합니다.
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 ID의 팀을 찾을 수 없습니다: " + teamId));
 
-        // 자신이 팀장인 팀에는 지원할 수 없습니다.
-        if (Objects.equals(team.getLeader().getId(), applicant.getId())) {
-            throw new IllegalArgumentException("자신이 팀장인 팀에는 지원할 수 없습니다.");
-        }
+        // 2. 지원자를 이메일로 조회합니다.
+        User applicant = userRepository.findByEmail(applicantEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("해당 이메일의 사용자를 찾을 수 없습니다: " + applicantEmail));
 
-        // TODO: 이미 지원한 팀에 중복 지원하는 것을 방지하는 로직 추가 필요
-
-        // Application 엔티티를 생성합니다.
+        // 3. Application 엔티티를 생성합니다.
         Application application = Application.builder()
-                .applicant(applicant)
                 .team(team)
+                .applicant(applicant)
                 .message(request.getMessage())
+                .status("PENDING") // 기본 상태를 'PENDING(대기중)'으로 설정
                 .build();
 
-        // 생성된 지원서를 DB에 저장합니다.
+        // 4. DB에 저장합니다.
         return applicationRepository.save(application);
     }
 
     /**
-     * 특정 팀의 모든 지원서 목록을 조회하는 메소드입니다.
+     * 특정 팀에 대한 모든 지원서를 조회하는 메소드입니다.
+     *
      * @param teamId 조회할 팀의 ID
-     * @param userEmail 요청을 보낸 사용자의 이메일 (권한 확인용)
-     * @return 해당 팀의 지원서 DTO 리스트
+     * @return 해당 팀에 지원한 모든 지원서 목록
      */
     @Transactional(readOnly = true)
-    public List<ApplicationResponse> findApplicationsByTeam(Long teamId, String userEmail) {
-        // 먼저 팀 정보를 조회합니다.
+    public List<ApplicationResponse> getApplicationsForTeam(Long teamId, String leaderEmail) {
+        // 1. 팀을 조회합니다.
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 ID의 팀을 찾을 수 없습니다: " + teamId));
 
-        // (핵심!) 현재 로그인한 사용자가 조회하려는 팀의 팀장이 맞는지 확인합니다.
-        if (!Objects.equals(team.getLeader().getEmail(), userEmail)) {
-            throw new AccessDeniedException("지원자 목록을 조회할 권한이 없습니다.");
+        // 2. 요청을 보낸 사용자가 이 팀의 팀장인지 확인합니다.
+        if (!Objects.equals(team.getLeader().getEmail(), leaderEmail)) {
+            throw new AccessDeniedException("이 팀의 지원서를 볼 권한이 없습니다.");
         }
 
-        // ApplicationRepository를 사용해 해당 팀의 모든 지원서를 가져옵니다.
+        // 3. 팀 ID로 모든 지원서를 조회합니다.
         List<Application> applications = applicationRepository.findByTeamId(teamId);
 
-        // 가져온 Application 엔티티 리스트를 ApplicationResponse DTO 리스트로 변환하여 반환합니다.
+        // 4. 조회된 지원서를 DTO로 변환하여 반환합니다.
         return applications.stream()
                 .map(ApplicationResponse::new)
                 .collect(Collectors.toList());
     }
 
     /**
-     * 특정 지원서를 수락하거나 거절하는 메소드입니다.
-     * @param applicationId 처리할 지원서의 ID
-     * @param newStatus 새로운 상태 ("ACCEPTED" 또는 "REJECTED")
-     * @param userEmail 요청을 보낸 사용자의 이메일 (권한 확인용)
-     * @return 상태가 변경된 지원서 정보 DTO
+     * 팀장이 지원서의 상태를 변경하는 메소드입니다.
+     *
+     * @param applicationId 상태를 변경할 지원서 ID
+     * @param newStatus     새로운 상태 값 (예: "ACCEPTED", "REJECTED")
+     * @param userEmail     요청을 보낸 사용자의 이메일
+     * @return 상태가 변경된 ApplicationResponse DTO
      */
     @Transactional
     public ApplicationResponse updateApplicationStatus(Long applicationId, String newStatus, String userEmail) {
-        // 지원서 정보를 조회합니다.
+        // 1. 지원서를 ID로 조회합니다.
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 ID의 지원서를 찾을 수 없습니다: " + applicationId));
 
-        // 요청을 보낸 사용자가 해당 지원서가 속한 팀의 팀장이 맞는지 확인합니다.
+        // 2. 요청을 보낸 사용자가 이 지원서가 속한 팀의 팀장인지 확인합니다.
         if (!Objects.equals(application.getTeam().getLeader().getEmail(), userEmail)) {
             throw new AccessDeniedException("지원서를 처리할 권한이 없습니다.");
         }
 
-        // 지원서 상태를 업데이트합니다.
+        // 3. 지원서 상태를 업데이트합니다.
         application.updateStatus(newStatus);
 
         // TODO: 수락("ACCEPTED") 시, Team의 멤버 목록에 지원자를 추가하는 로직 필요
 
+        // 4. 변경된 지원서를 DTO로 감싸서 반환합니다.
         return new ApplicationResponse(application);
+    }
+
+    /**
+     * (추가) 내가 지원한 팀들의 지원 현황을 조회하는 메소드입니다.
+     *
+     * @param applicantEmail 현재 로그인한 사용자 이메일
+     * @return MyApplicationResponse DTO 리스트
+     */
+    @Transactional(readOnly = true)
+    public List<MyApplicationResponse> findMyApplications(String applicantEmail) {
+        // 1. 이메일로 User 객체를 찾습니다.
+        User applicant = userRepository.findByEmail(applicantEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + applicantEmail));
+
+        // 2. Repository에서 해당 사용자가 지원한 모든 지원서를 찾습니다.
+        List<Application> applications = applicationRepository.findAllByApplicant(applicant);
+
+        // 3. 각 지원서(Application)를 MyApplicationResponse DTO로 변환하여 리스트로 반환합니다.
+        return applications.stream()
+                .map(MyApplicationResponse::new)
+                .collect(Collectors.toList());
     }
 }

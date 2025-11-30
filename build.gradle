@@ -18,10 +18,13 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    // --- PostgreSQL 드라이버는 주석을 다시 해제합니다. ---
+
+    // [수정] Render 배포를 위해 PostgreSQL 드라이버 주석 해제 (활성화)
     runtimeOnly 'org.postgresql:postgresql'
-    // --- MySQL 드라이버의 주석을 처리합니다. ---
+
+    // [수정] 배포 시에는 로컬용 MySQL 드라이버 주석 처리 (비활성화)
     // runtimeOnly 'com.mysql:mysql-connector-j'
+
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
@@ -39,4 +42,3 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
-

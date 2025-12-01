@@ -33,30 +33,30 @@ spring:
   #   database-platform: org.hibernate.dialect.MySQLDialect
 
   # ===================================================================
-  # == Spring Mail 설정 (587 포트 + 디버그 모드) ==
+  # == Spring Mail 설정 (최종: 465 포트 + SSL + IPv4) ==
   # ===================================================================
-  # 주의: 이 부분은 반드시 spring: 아래에 들여쓰기 되어야 합니다.
   mail:
     host: smtp.gmail.com
-    port: 587
+    port: 465
     username: ${SPRING_MAIL_USERNAME}
     password: ${SPRING_MAIL_PASSWORD}
+    protocol: smtps              # [중요] 465 포트는 smtps 프로토콜을 사용합니다.
     properties:
       mail:
-        debug: true               # 상세 로그 출력
+        debug: true              # 디버깅을 위해 로그 출력 유지
         smtp:
           auth: true
-          starttls:
-            enable: true
-            required: true
           ssl:
-            trust: smtp.gmail.com # 보안 연결 신뢰 설정
+            enable: true         # 465 포트에서는 SSL을 반드시 켜야 합니다.
+            trust: smtp.gmail.com
+          starttls:
+            enable: false        # SSL을 쓰므로 STARTTLS는 끕니다.
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
 
 # ===================================================================
-# == JWT 설정 (spring과 같은 레벨, 들여쓰기 없음) ==
+# == JWT 설정 (spring과 같은 레벨) ==
 # ===================================================================
 jwt:
   secret: 293IGlzIHRoaXMgc2VjcmV0IGtleT8gSXQgaXMgYSB2ZXJ5IHNlY3JldCBrZXkuIFBsZWFzZSBkb24ndCB0ZWxsIGFueW9uZSE=

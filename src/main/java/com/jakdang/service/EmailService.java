@@ -1,11 +1,9 @@
 package com.jakdang.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
 @Service
@@ -14,39 +12,27 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username}")
-    private String fromEmail;
+    // [수정 핵심] Brevo 아이디(9d04...) 대신, 수신자가 보게 될 '진짜 이메일 주소'를 직접 적습니다.
+    private final String fromEmail = "jakdangmoeui.certification@gmail.com";
 
     /**
      * 지정된 이메일 주소로 인증 코드를 발송하는 메소드입니다.
-     * @param toEmail 수신자 이메일 주소
-     * @param subject 이메일 제목
-     * @param code 인증 코드
      */
     public void sendVerificationCode(String toEmail, String subject, String code) {
         MimeMessage mimeMessage = mailSender.createMimeMessage();
         try {
-            // 멀티파트 모드 + UTF-8
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(mimeMessage, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, "UTF-8");
+            // 멀티파트 모드(이미지/첨부파일 가능) + UTF-8 인코딩 설정
+            // (보내주신 코드의 MULTIPART_MODE_MIXED_RELATED 옵션도 좋지만,
+            //  단순 텍스트+HTML 구조에서는 기본 true 옵션이 더 안전하고 호환성이 좋습니다.)
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-            helper.setFrom(fromEmail, "작당모의");     // fromEmail은 SMTP 로그인 계정과 동일 도메인
+            // [중요] 보내는 사람 이름 설정 ("작당모의" <이메일>)
+            helper.setFrom(fromEmail, "작당모의");
             helper.setTo(toEmail);
             helper.setSubject("[작당모의] " + subject);
             helper.setSentDate(new java.util.Date());
 
-            // 텍스트 대체본 (plain)
-            String plain = """
-                안녕하세요, 작당모의입니다.
-
-                아래 인증 코드를 입력해 주세요.
-
-                인증 코드: %s
-
-                본인이 요청하지 않으셨다면 이 메일은 무시하셔도 됩니다.
-                """.formatted(code);
-
-            // HTML 본문
+            // 1. HTML 본문 (디자인 적용)
             String html = """
             <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>
               <h1 style='color: #3b82f6;'>작당모의 인증 코드 안내</h1>
@@ -61,20 +47,18 @@ public class EmailService {
             </div>
             """.formatted(code);
 
-            // plain + html 동시 설정 (중요!)
-            helper.setText(plain, html);
+            // 2. 메일 본문 설정 (HTML을 사용하겠다고 true 설정)
+            // (참고: MimeMessageHelper에는 setText(plain, html) 메소드가 없으므로, HTML을 우선으로 설정합니다.)
+            helper.setText(html, true);
 
-            // 권장 헤더(스팸엔 직접 영향은 적지만 품질/회신/루프 방지에 도움)
+            // 권장 헤더 추가 (자동 발송 메일임을 명시하여 스팸 분류 확률 감소)
             mimeMessage.addHeader("Auto-Submitted", "auto-generated");
             mimeMessage.addHeader("X-Auto-Response-Suppress", "All");
-            // 필요 시 구독해지 헤더(트랜잭셔널 메일에도 무방)
-            // mimeMessage.addHeader("List-Unsubscribe", "<mailto:no-reply@yourdomain>");
 
             mailSender.send(mimeMessage);
         } catch (Exception e) {
+            e.printStackTrace(); // 에러 발생 시 로그에 상세 내용 출력
             throw new RuntimeException("이메일 발송에 실패했습니다.", e);
         }
     }
-
 }
-

@@ -49,6 +49,7 @@ public class EmailController {
             emailService.sendVerificationCode(email, "비밀번호 재설정 인증 코드", code);
             return ResponseEntity.ok("인증 코드가 성공적으로 발송되었습니다.");
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body("이메일 발송 중 오류가 발생했습니다.");
         }
     }

@@ -36,21 +36,18 @@ spring:
   # == Spring Mail 설정 (최종: 465 포트 + SSL + IPv4) ==
   # ===================================================================
   mail:
-    host: smtp.gmail.com
-    port: 465
+    host: smtp-relay.brevo.com  # [변경] 구글 대신 Brevo 호스트 사용
+    port: 587                   # Brevo는 587 포트를 권장합니다.
     username: ${SPRING_MAIL_USERNAME}
     password: ${SPRING_MAIL_PASSWORD}
-    protocol: smtps              # [중요] 465 포트는 smtps 프로토콜을 사용합니다.
     properties:
       mail:
-        debug: true              # 디버깅을 위해 로그 출력 유지
+        debug: true
         smtp:
           auth: true
-          ssl:
-            enable: true         # 465 포트에서는 SSL을 반드시 켜야 합니다.
-            trust: smtp.gmail.com
           starttls:
-            enable: false        # SSL을 쓰므로 STARTTLS는 끕니다.
+            enable: true
+            required: true
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000

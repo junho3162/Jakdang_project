@@ -37,22 +37,24 @@ spring:
 
 
   # Spring Mail 설정 (다시 587 포트로 변경하고, 상세 로그를 켭니다)
-  mail:
-    host: smtp.gmail.com
-    port: 587                     # 다시 587로 변경 (표준)
-    username: ${SPRING_MAIL_USERNAME}
-    password: ${SPRING_MAIL_PASSWORD}
-    properties:
-      mail:
-        debug: true               # [중요] 메일 전송 과정을 로그에 다 찍어줍니다!
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true        # [중요] 보안 연결 강제
-          connectiontimeout: 5000 # 5초 동안 응답 없으면 바로 에러 (무한 대기 방지)
-          timeout: 5000
-          writetimeout: 5000
+mail:
+  host: smtp.gmail.com
+  port: 587
+  username: ${SPRING_MAIL_USERNAME}
+  password: ${SPRING_MAIL_PASSWORD}
+  properties:
+    mail:
+      debug: true
+      smtp:
+        auth: true
+        starttls:
+          enable: true
+          required: true
+        ssl:
+          trust: smtp.gmail.com  # [추가] 이 줄을 추가하면 보안 연결이 더 원활해집니다.
+        connectiontimeout: 5000
+        timeout: 5000
+        writetimeout: 5000
 
 # JWT 설정 (보안을 위해 secret은 환경 변수로 이동 - 로컬에서도 동일하게 사용 가능)
 jwt:

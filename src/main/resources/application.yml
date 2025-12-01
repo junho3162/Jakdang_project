@@ -39,15 +39,18 @@ spring:
   # Spring Mail 설정 (보안을 위해 비밀번호는 환경 변수로 이동 - 로컬에서도 동일하게 사용 가능)
   mail:
     host: smtp.gmail.com
-    port: 587
+    port: 465
     username: ${SPRING_MAIL_USERNAME}
     password: ${SPRING_MAIL_PASSWORD}
     properties:
       mail:
         smtp:
           auth: true
-          starttls:
+          ssl: # [변경] starttls 대신 ssl 설정을 켭니다.
             enable: true
+            trust: smtp.gmail.com # [추가] 신뢰할 수 있는 서버로 명시
+          starttls:
+            enable: false         # [변경] 465 포트에서는 starttls를 끕니다.
 
 # JWT 설정 (보안을 위해 secret은 환경 변수로 이동 - 로컬에서도 동일하게 사용 가능)
 jwt:

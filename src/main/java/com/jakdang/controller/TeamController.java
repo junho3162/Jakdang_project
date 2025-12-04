@@ -23,7 +23,7 @@ import java.util.Set;
 public class TeamController {
 
     private final TeamService teamService;
-    private final ApplicationService applicationService; // ApplicationService 의존성 주입
+    private final ApplicationService applicationService;
 
     /**
      * 팀 생성 API
@@ -37,38 +37,63 @@ public class TeamController {
     }
 
     /**
-     * 모든 팀 조회 API
+     * 모든 팀 조회 API (수정됨: 로그인 유저의 즐겨찾기 여부 확인)
      * GET /api/teams
      */
     @GetMapping
-    public ResponseEntity<List<TeamResponse>> getAllTeams() {
-        List<TeamResponse> teams = teamService.findAllTeams();
+    public ResponseEntity<List<TeamResponse>> getAllTeams(Authentication authentication) {
+        // 인증 정보가 없으면 null, 있으면 이메일 추출
+        String userEmail = (authentication != null) ? authentication.getName() : null;
+        List<TeamResponse> teams = teamService.findAllTeams(userEmail);
         return ResponseEntity.ok(teams);
     }
 
     /**
-     * 특정 팀 상세 조회 API
+     * 특정 팀 상세 조회 API (수정됨: 로그인 유저의 즐겨찾기 여부 확인)
      * GET /api/teams/{teamId}
      */
     @GetMapping("/{teamId}")
-    public ResponseEntity<TeamResponse> getTeamById(@PathVariable Long teamId) {
-        TeamResponse teamInfo = teamService.findTeamById(teamId);
+    public ResponseEntity<TeamResponse> getTeamById(@PathVariable Long teamId, Authentication authentication) {
+        String userEmail = (authentication != null) ? authentication.getName() : null;
+        TeamResponse teamInfo = teamService.findTeamById(teamId, userEmail);
         return ResponseEntity.ok(teamInfo);
     }
 
     /**
-     * 특정 팀 검색 기능 API
+     * 특정 팀 검색 기능 API (수정됨: 로그인 유저의 즐겨찾기 여부 확인)
      * GET /api/teams/search
      */
     @GetMapping("/search")
     public ResponseEntity<List<TeamResponse>> searchTeams(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Set<TeamTag> tags
+            @RequestParam(required = false) Set<TeamTag> tags,
+            Authentication authentication
     ) {
-        List<TeamResponse> result = teamService.searchTeams(keyword, tags);
+        String userEmail = (authentication != null) ? authentication.getName() : null;
+        List<TeamResponse> result = teamService.searchTeams(keyword, tags, userEmail);
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * (신규 기능) 즐겨찾기 토글 API
+     * POST /api/teams/{teamId}/favorite
+     * Header에 JWT 토큰 필수
+     */
+    @PostMapping("/{teamId}/favorite")
+    public ResponseEntity<String> toggleFavorite(@PathVariable Long teamId, Authentication authentication) {
+        try {
+            String userEmail = authentication.getName();
+            boolean isFavorited = teamService.toggleFavorite(teamId, userEmail);
+
+            if (isFavorited) {
+                return ResponseEntity.ok("찜 목록에 추가되었습니다.");
+            } else {
+                return ResponseEntity.ok("찜 목록에서 삭제되었습니다.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
     /**
      * 팀 수정 API
@@ -105,11 +130,7 @@ public class TeamController {
     }
 
     /**
-     * 특정 팀에 지원하는 API 입니다.
-     * @param teamId 지원할 팀의 ID
-     * @param request 지원 메시지가 담긴 DTO
-     * @param authentication 현재 로그인한 사용자 정보
-     * @return 성공 메시지 또는 오류 메시지
+     * 특정 팀에 지원하는 API
      */
     @PostMapping("/{teamId}/apply")
     public ResponseEntity<String> applyToTeam(@PathVariable Long teamId, @RequestBody ApplyTeamRequest request, Authentication authentication) {
@@ -118,25 +139,21 @@ public class TeamController {
             applicationService.applyToTeam(teamId, request, applicantEmail);
             return ResponseEntity.ok("팀 지원이 성공적으로 완료되었습니다.");
         } catch (IllegalArgumentException | UsernameNotFoundException e) {
-            // Service에서 발생시킨 비즈니스 규칙 위반(팀장 지원, 팀 없음 등) 또는 사용자 없음 예외를 처리합니다.
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            // 그 외 예상치 못한 서버 내부 오류를 처리합니다.
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("지원 처리 중 오류가 발생했습니다.");
         }
     }
 
     /**
-     * 특정 팀의 지원자 목록을 조회하는 API 입니다. (팀장 전용)
-     * @param teamId 조회할 팀의 ID
-     * @param authentication 현재 로그인한 사용자 정보
-     * @return 해당 팀의 지원자 리스트
+     * 특정 팀의 지원자 목록을 조회하는 API (팀장 전용)
      */
     @GetMapping("/{teamId}/applications")
     public ResponseEntity<?> getApplicationsByTeam(@PathVariable Long teamId, Authentication authentication) {
         try {
             String userEmail = authentication.getName();
-            List<ApplicationResponse> applications = applicationService.getApplicationsForTeam(teamId, userEmail);
+            // ApplicationService 메소드 이름을 업로드된 파일 기준(findApplicationsByTeam)으로 사용합니다.
+            List<ApplicationResponse> applications = applicationService.findApplicationsByTeam(teamId, userEmail);
             return ResponseEntity.ok(applications);
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
@@ -146,14 +163,7 @@ public class TeamController {
     }
 
     /**
-     * 특정 지원서의 상태를 변경(수락/거절)하는 API 입니다. (팀장 전용)
-     *
-     * 요청 Body 예시:
-     * {
-     *   "status": "ACCEPTED"   // 또는 "REJECTED"
-     * }
-     *
-     * 내부적으로는 "수락", "거절" 한글 상태로 변환하여 저장합니다.
+     * 특정 지원서의 상태를 변경하는 API (팀장 전용)
      */
     @PatchMapping("/{teamId}/applications/{applicationId}")
     public ResponseEntity<?> updateApplicationStatus(@PathVariable Long teamId,

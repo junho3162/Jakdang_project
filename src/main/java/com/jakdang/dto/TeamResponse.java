@@ -3,7 +3,7 @@ package com.jakdang.dto;
 import com.jakdang.domain.Team;
 import com.jakdang.domain.TeamTag;
 import lombok.Getter;
-
+import lombok.Setter; // [필수 추가]
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Set;
@@ -21,6 +21,7 @@ public class TeamResponse {
     private final String status;
     private final int maxMembers;
     private final String leaderNickname; // 팀장의 전체 정보 대신 닉네임만 포함
+    private boolean isFavorite; // 즐겨찾기 여부 추가 (기본값 false)
     private LocalDate deadline;
     private Set<TeamTag> tags;
     private LocalTime startTime;
@@ -38,6 +39,7 @@ public class TeamResponse {
         this.deadline = team.getDeadline();
         this.tags = team.getTags();
         this.leaderNickname = team.getLeader().getNickname();
+        this.isFavorite = false; // 기본적으로 false로 초기화
 
         this.startTime = team.getStartTime();
         this.endTime = team.getEndTime();

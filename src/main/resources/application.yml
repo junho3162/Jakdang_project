@@ -10,6 +10,7 @@ spring:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -20,24 +21,25 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
   # ===================================================================
-  # == 로컬 개발용 (MySQL) 설정 - 주석 처리됨 ==
+  # == 로컬 개발용 (MySQL) 설정 - 비활성(주석) ==
   # ===================================================================
   # datasource:
   #   driver-class-name: com.mysql.cj.jdbc.Driver
   #   url: jdbc:mysql://localhost:3306/jakdang_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
   #   username: root
-  #   password: your_password
+  #   password: password
+  #
   # jpa:
   #   hibernate:
   #     ddl-auto: update
   #   database-platform: org.hibernate.dialect.MySQLDialect
 
   # ===================================================================
-  # == Spring Mail 설정 (최종: 465 포트 + SSL + IPv4) ==
+  # == Spring Mail 설정 (최종: 2525 포트 + STARTTLS) ==
   # ===================================================================
   mail:
     host: smtp-relay.brevo.com
-    port: 2525                   # [핵심 변경] 587 -> 2525 (차단되지 않는 우회 포트)
+    port: 2525
     username: ${SPRING_MAIL_USERNAME}
     password: ${SPRING_MAIL_PASSWORD}
     properties:
@@ -46,7 +48,7 @@ spring:
         smtp:
           auth: true
           starttls:
-            enable: true         # 2525번 포트도 STARTTLS를 사용합니다.
+            enable: true
             required: true
           connectiontimeout: 5000
           timeout: 5000

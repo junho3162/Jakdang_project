@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -95,5 +96,20 @@ public class BookingController {
         if (!start.isBefore(end)) return ResponseEntity.badRequest().build();
         String me = authentication.getName();
         return ResponseEntity.ok(bookingService.checkAvailability(spaceId, start, end, me));
+    }
+
+    @DeleteMapping("/{bookingId}")
+    public ResponseEntity<?> cancelBooking(@PathVariable Long bookingId,
+                                           Authentication authentication) {
+        String me = authentication.getName();
+
+        try {
+            bookingService.cancelBooking(bookingId, me);
+            return ResponseEntity.noContent().build();   // 204
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 }

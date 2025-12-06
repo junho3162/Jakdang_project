@@ -99,17 +99,21 @@ public class BookingController {
     }
 
     @DeleteMapping("/{bookingId}")
-    public ResponseEntity<?> cancelBooking(@PathVariable Long bookingId,
-                                           Authentication authentication) {
-        String me = authentication.getName();
-
+    public ResponseEntity<String> cancelBooking(@PathVariable Long bookingId, Authentication authentication) {
         try {
-            bookingService.cancelBooking(bookingId, me);
-            return ResponseEntity.noContent().build();   // 204
+            String userEmail = authentication.getName();
+            bookingService.cancelBooking(bookingId, userEmail);
+
+            // [중요] 여기서 .noContent()를 쓰면 204가 되고 메시지가 안 나옵니다.
+            // 아래처럼 .ok("메시지")를 써야 200이 되고 메시지가 나옵니다!
+            return ResponseEntity.ok("예약이 성공적으로 취소되었습니다.");
+
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("예약 취소 중 오류가 발생했습니다.");
         }
     }
 }

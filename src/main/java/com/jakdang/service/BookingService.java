@@ -13,6 +13,7 @@ import com.jakdang.repository.SpaceRepository;
 import com.jakdang.repository.TeamRepository; // TeamRepo 추가
 import com.jakdang.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,6 +60,32 @@ public class BookingService {
                 .build();
 
         return bookingRepository.save(booking);
+    }
+
+    /** 🔥 예약 삭제 로직 추가 */
+    @Transactional
+    public void cancelBooking(Long bookingId, String requesterEmail) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("해당 ID의 예약을 찾을 수 없습니다: " + bookingId));
+
+        // 팀 예약인 경우: 팀 리더만 취소 가능
+        if (booking.getTeam() != null) {
+            Team team = booking.getTeam();
+            String leaderEmail = team.getLeader().getEmail();   // Team 엔티티에 leader(User) 있음
+
+            if (!leaderEmail.equals(requesterEmail)) {
+                throw new AccessDeniedException("팀 리더만 이 예약을 취소할 수 있습니다.");
+            }
+        } else {
+            // 개인 예약인 경우: 예약한 본인만 취소 가능
+            String bookerEmail = booking.getUser().getEmail();
+            if (!bookerEmail.equals(requesterEmail)) {
+                throw new AccessDeniedException("예약자 본인만 예약을 취소할 수 있습니다.");
+            }
+        }
+
+        bookingRepository.delete(booking);
     }
 
     /** (내 예약) 목록 조회 */
